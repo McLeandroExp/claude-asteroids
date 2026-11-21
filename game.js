@@ -62,6 +62,17 @@ const RADII  = [0, 16, 30, 50];   // por tamaño 1, 2, 3
 const SPEEDS = [0, 85, 55, 32];   // velocidad base por tamaño
 const POINTS = [0, 100, 50, 20];  // puntos por tamaño
 
+// Forma trazada a mano (píxeles del dibujo de referencia), normalizada a centro 0 y radio máx. 1
+const TRACED_SHAPE = (() => {
+  const px = [[188, 63], [267, 86], [251, 171], [330, 196], [308, 282],
+              [238, 279], [204, 334], [107, 287], [62, 205], [84, 117]];
+  const cx = px.reduce((s, [x]) => s + x, 0) / px.length;
+  const cy = px.reduce((s, [, y]) => s + y, 0) / px.length;
+  const pts = px.map(([x, y]) => [x - cx, y - cy]);
+  const R = Math.max(...pts.map(([x, y]) => Math.hypot(x, y)));
+  return pts.map(([x, y]) => [x / R, y / R]);
+})();
+
 class Asteroid {
   constructor(x, y, size = 3) {
     this.x    = x;
@@ -77,13 +88,17 @@ class Asteroid {
     this.rotSpeed = rand(-1.2, 1.2);
     this.rot = rand(0, Math.PI * 2);
 
-    // Polígono irregular
-    const n = randInt(8, 13);
-    this.verts = [];
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2;
-      const r = this.radius * rand(0.6, 1.0);
-      this.verts.push([Math.cos(a) * r, Math.sin(a) * r]);
+    // Asteroides grandes: a veces usan la forma trazada a mano; si no, polígono irregular
+    if (size === 3 && Math.random() < 0.5) {
+      this.verts = TRACED_SHAPE.map(([x, y]) => [x * this.radius, y * this.radius]);
+    } else {
+      const n = randInt(8, 13);
+      this.verts = [];
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        const r = this.radius * rand(0.6, 1.0);
+        this.verts.push([Math.cos(a) * r, Math.sin(a) * r]);
+      }
     }
   }
 
